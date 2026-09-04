@@ -11,8 +11,7 @@ COPY requirements.txt .
 
 RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
 RUN pip install --no-cache-dir -r requirements.txt
-
-RUN python -m spacy download en_core_web_sm
+RUN pip install --no-cache-dir en_core_web_sm@https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0.tar.gz
 
 COPY . .
 
