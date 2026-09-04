@@ -1,6 +1,6 @@
 import json
 from typing import List, Dict, Tuple
-from ..models.ml_loader import MLModels
+from .ml_loader import MLModels
 
 # O*NET-inspired competency framework for India's Official Statistical System
 COMPETENCY_FRAMEWORK = {

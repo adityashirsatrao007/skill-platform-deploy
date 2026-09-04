@@ -1,7 +1,7 @@
 from typing import List, Dict, Optional
 import random
 import re
-from ..models.ml_loader import MLModels
+from .ml_loader import MLModels
 
 class MCQGenerator:
     def __init__(self):

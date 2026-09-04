@@ -1,0 +1,35 @@
+services:
+  - type: web
+    name: skill-platform-api
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: skill-platform-db
+          property: connectionString
+      - key: REDIS_URL
+        sync: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: false
+    healthCheckPath: /health
+
+  - type: web
+    name: skill-platform-frontend
+    runtime: static
+    staticPublishPath: ./frontend/dist
+    buildCommand: cd frontend && npm install && npm run build
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          name: skill-platform-api
+          property: host
+
+databases:
+  - name: skill-platform-db
+    plan: free
+    databaseName: skill_platform

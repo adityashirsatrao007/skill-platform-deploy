@@ -15,6 +15,7 @@ ml_models = MLModels()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
+    Base.metadata.create_all(bind=engine)
     ml_models.load_all()
     yield
     # Shutdown

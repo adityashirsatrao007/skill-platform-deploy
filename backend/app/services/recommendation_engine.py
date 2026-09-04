@@ -1,7 +1,7 @@
 from typing import List, Dict, Optional
 import numpy as np
 from sentence_transformers import SentenceTransformer
-from ..models.ml_loader import MLModels
+from .ml_loader import MLModels
 
 # Sample iGOT Karmayogi course database (in production, fetch from API)
 IGOT_COURSES = [
