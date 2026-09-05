@@ -1,8 +1,10 @@
 import json
 from typing import List, Dict, Tuple
 from .ml_loader import MLModels
+from .onet_loader import load_onet_skills, get_skill_category
 
 # O*NET-inspired competency framework for India's Official Statistical System
+# This serves as fallback; dynamic O*NET data is loaded from DB when available
 COMPETENCY_FRAMEWORK = {
     "statistical": {
         "skills": [
@@ -38,6 +40,39 @@ COMPETENCY_FRAMEWORK = {
         "levels": {1: "Basic", 2: "Intermediate", 3: "Proficient", 4: "Advanced", 5: "Expert"}
     }
 }
+
+
+def _build_framework_from_onet() -> Dict:
+    """Build competency framework dynamically from O*NET CSV data."""
+    onet_skills = load_onet_skills()
+    framework = {
+        "statistical": {"skills": [], "levels": {1: "Basic", 2: "Intermediate", 3: "Proficient", 4: "Advanced", 5: "Expert"}},
+        "technical": {"skills": [], "levels": {1: "Basic", 2: "Intermediate", 3: "Proficient", 4: "Advanced", 5: "Expert"}},
+        "digital_governance": {"skills": [], "levels": {1: "Basic", 2: "Intermediate", 3: "Proficient", 4: "Advanced", 5: "Expert"}},
+        "behavioural": {"skills": [], "levels": {1: "Basic", 2: "Intermediate", 3: "Proficient", 4: "Advanced", 5: "Expert"}},
+        "general": {"skills": [], "levels": {1: "Basic", 2: "Intermediate", 3: "Proficient", 4: "Advanced", 5: "Expert"}},
+    }
+
+    all_skills = set()
+    for category, skills in onet_skills.items():
+        for skill in skills:
+            if skill not in all_skills:
+                all_skills.add(skill)
+                cat = get_skill_category(skill)
+                if cat in framework:
+                    framework[cat]["skills"].append(skill)
+
+    return framework
+
+
+# Try to load from O*NET; fall back to hardcoded
+try:
+    _ONET_FRAMEWORK = _build_framework_from_onet()
+    # Use O*NET if it has meaningful data
+    if sum(len(v["skills"]) for v in _ONET_FRAMEWORK.values()) > 10:
+        COMPETENCY_FRAMEWORK = _ONET_FRAMEWORK
+except Exception:
+    pass
 
 class SkillGapAnalyzer:
     def __init__(self):

@@ -2,11 +2,13 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import List, Optional, Dict
+import random
 
 from ..models.database import get_db
 from ..models.models import User, Quiz, QuizAttempt
 from ..services.mcq_generator import MCQGenerator
 from ..services.document_processor import DocumentProcessor
+from ..services.onet_loader import load_onet_skills, get_skill_category
 from ..api.auth import get_current_user
 
 router = APIRouter()
@@ -19,6 +21,11 @@ class QuizGenerateRequest(BaseModel):
     num_questions: int = 5
     difficulty: str = "medium"
     title: Optional[str] = "Generated Quiz"
+
+class SkillQuizRequest(BaseModel):
+    skill: str
+    num_questions: int = 5
+    difficulty: str = "medium"
 
 class QuizSubmitRequest(BaseModel):
     quiz_id: int
@@ -79,6 +86,63 @@ async def generate_quiz(
         difficulty=request.difficulty,
         time_limit_minutes=len(mcqs) * 2
     )
+
+@router.post("/generate-from-skill", response_model=QuizResponse)
+async def generate_quiz_from_skill(
+    request: SkillQuizRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Generate a quiz based on a specific O*NET skill."""
+    onet_skills = load_onet_skills()
+    all_skills = []
+    for skills in onet_skills.values():
+        all_skills.extend(skills)
+
+    skill_name = request.skill
+    matched = [s for s in all_skills if skill_name.lower() in s.lower()]
+    if not matched:
+        matched = [skill_name]
+
+    mcqs = []
+    for i in range(request.num_questions):
+        concept = matched[i % len(matched)]
+        mcq = mcq_generator.generate_mcqs_from_concept(
+            concept,
+            num_questions=1
+        )[0]
+        mcq["difficulty"] = request.difficulty
+        mcq["concept"] = concept
+        mcqs.append(mcq)
+
+    quiz = Quiz(
+        title=f"Skill Quiz: {skill_name}",
+        questions=mcqs,
+        difficulty=request.difficulty,
+        category="skill_based",
+        created_by=current_user.id
+    )
+    db.add(quiz)
+    db.commit()
+    db.refresh(quiz)
+
+    return QuizResponse(
+        id=quiz.id,
+        title=quiz.title,
+        questions=[QuestionResponse(**q) for q in mcqs],
+        total_questions=len(mcqs),
+        difficulty=request.difficulty,
+        time_limit_minutes=len(mcqs) * 2
+    )
+
+@router.get("/skills")
+async def list_available_skills():
+    """List all O*NET skills available for quiz generation."""
+    onet_skills = load_onet_skills()
+    result = {}
+    for category, skills in onet_skills.items():
+        result[category] = sorted(set(skills))
+    return result
 
 @router.post("/generate-from-document")
 async def generate_quiz_from_document(
