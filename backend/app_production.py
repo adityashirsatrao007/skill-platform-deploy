@@ -276,7 +276,7 @@ async def assess_competencies(input_data: SkillInput, current_user: User = Depen
     for category, data in COMPETENCY_FRAMEWORK.items():
         for skill in data["skills"]:
             if skill.lower() in [s.lower() for s in input_data.skills]:
-                level = min(5.0, 1.0 + (input_data.experience * 0.3) + random.uniform(0.5, 1.5))
+                level = min(5.0, 1.0 + (input_data.experience * 0.3))
                 competency_levels[skill] = round(level, 1)
             else:
                 competency_levels[skill] = 0.0

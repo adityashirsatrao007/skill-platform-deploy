@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List, Dict
 
 from ..models.database import get_db
-from ..models.models import User, Course, CourseEnrollment
+from ..models.models import User, Course, CourseEnrollment, UserCompetency
 from ..services.igot_connector import IGOTConnector
 from ..api.auth import get_current_user
 
