@@ -16,10 +16,16 @@ ml_models = MLModels()
 async def lifespan(app: FastAPI):
     # Startup
     Base.metadata.create_all(bind=engine)
-    ml_models.load_all()
+    try:
+        ml_models.load_all()
+    except Exception as e:
+        print(f"Warning: ML model loading failed: {e}")
     yield
     # Shutdown
-    ml_models.unload_all()
+    try:
+        ml_models.unload_all()
+    except Exception:
+        pass
 
 app = FastAPI(
     title="Skill Intelligence Platform",
