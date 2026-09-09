@@ -15,7 +15,11 @@ ml_models = MLModels()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
-    Base.metadata.create_all(bind=engine)
+    try:
+        Base.metadata.create_all(bind=engine)
+        print("Database tables created successfully")
+    except Exception as e:
+        print(f"ERROR: Failed to create tables: {e}")
     try:
         ml_models.load_all()
     except Exception as e:

@@ -79,29 +79,36 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
 
 @router.post("/register", response_model=UserResponse)
 async def register(user: UserCreate, db: Session = Depends(get_db)):
-    db_user = db.query(User).filter(User.email == user.email).first()
-    if db_user:
-        raise HTTPException(status_code=400, detail="Email already registered")
-    
-    new_user = User(
-        email=user.email,
-        hashed_password=get_password_hash(user.password),
-        full_name=user.full_name,
-        designation=user.designation,
-        department=user.department,
-        job_role=user.job_role,
-        years_of_experience=user.years_of_experience,
-        educational_qualifications=user.educational_qualifications
-    )
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-    
-    profile = UserProfile(user_id=new_user.id)
-    db.add(profile)
-    db.commit()
-    
-    return new_user
+    try:
+        db_user = db.query(User).filter(User.email == user.email).first()
+        if db_user:
+            raise HTTPException(status_code=400, detail="Email already registered")
+        
+        new_user = User(
+            email=user.email,
+            hashed_password=get_password_hash(user.password),
+            full_name=user.full_name,
+            designation=user.designation,
+            department=user.department,
+            job_role=user.job_role,
+            years_of_experience=user.years_of_experience,
+            educational_qualifications=user.educational_qualifications
+        )
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+        
+        profile = UserProfile(user_id=new_user.id)
+        db.add(profile)
+        db.commit()
+        
+        return new_user
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
 
 @router.post("/login", response_model=Token)
 async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
